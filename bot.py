@@ -32,7 +32,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(
 
 # ===== BOT INIT (must be before handlers) =====
 bot = telebot.TeleBot(BOT_TOKEN)
-init_db()
 
 
 # ===== HELPERS =====
@@ -521,9 +520,10 @@ if __name__ == "__main__":
     prepare_polling()
     while True:
         try:
+            init_db()
+            prepare_polling()
             bot.infinity_polling(skip_pending=True, timeout=30, long_polling_timeout=30)
         except Exception as exc:
-            logging.exception("Polling xatoligi: %s", exc)
-            # Webhook qayta o'rnatilib qolgan bo'lsa, pollingdan oldin yana tozalaymiz.
-            prepare_polling()
+            logging.exception("Bot runtime xatoligi: %s", exc)
+            # DB yoki webhook muammosi bo'lsa, qisqa kutib qayta urinib ko'ramiz.
             time.sleep(5)

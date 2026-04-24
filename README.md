@@ -45,10 +45,17 @@ Bot va API ni alohida process/service qilib deploy qiling:
 
 ## Tez diagnostika
 ```bash
+# API import (BOT_TOKEN bo'lmasa ham ishlaydi)
 python - <<'PY'
 import importlib
 importlib.import_module('api.app')
+print('api import ok')
+PY
+
+# Bot import (BOT_TOKEN talab qiladi)
+BOT_TOKEN=your_token python - <<'PY'
+import importlib
 importlib.import_module('bot')
-print('imports ok')
+print('bot import ok')
 PY
 ```
