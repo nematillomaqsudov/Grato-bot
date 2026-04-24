@@ -506,12 +506,24 @@ def handler(msg):
                     return
 
 
+def prepare_polling():
+    """Ensure polling mode is usable even if a webhook was set before."""
+    try:
+        bot.remove_webhook(drop_pending_updates=True)
+        logging.info("Webhook o'chirildi, polling rejimi tayyor.")
+    except Exception as exc:
+        logging.warning("Webhookni o'chirishda xato: %s", exc)
+
+
 # ===== RUN =====
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
+    prepare_polling()
     while True:
         try:
             bot.infinity_polling(skip_pending=True, timeout=30, long_polling_timeout=30)
         except Exception as exc:
             logging.exception("Polling xatoligi: %s", exc)
+            # Webhook qayta o'rnatilib qolgan bo'lsa, pollingdan oldin yana tozalaymiz.
+            prepare_polling()
             time.sleep(5)
