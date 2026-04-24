@@ -18,12 +18,14 @@ from api.database import set_admin_password
 BASE_DIR = Path(__file__).resolve().parent
 MENU_PATH = BASE_DIR / "menu.json"
 
-BOT_TOKEN = os.getenv("BOT_TOKEN") or os.getenv("TOKEN") or "8500279228:AAEJSwSkU72fOM53ntPHMoVoSMudIQv-7ZE"
+BOT_TOKEN = os.getenv("BOT_TOKEN") or os.getenv("TOKEN")
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN (or TOKEN) environment variable is required")
 # Backward compatibility for old code paths that still reference TOKEN.
 TOKEN = BOT_TOKEN
-ADMIN_ID = int(os.getenv("ADMIN_ID", "7825940174"))
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 WEB_APP_URL = os.getenv("WEB_APP_URL", "")
-API_BASE = os.getenv("API_BASE", "https://grato-api-production.up.railway.app")
+API_BASE = os.getenv("API_BASE", "")
 API_URL = os.getenv("API_URL", API_BASE)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
@@ -154,6 +156,8 @@ def process_web_app_order(msg):
 
 
 def save_order_to_db(phone, address, items, total):
+    if not API_URL:
+        raise RuntimeError("API_URL (or API_BASE) environment variable is required")
     try:
         res = requests.post(
             f"{API_URL}/api/orders",
@@ -502,12 +506,24 @@ def handler(msg):
                     return
 
 
+def prepare_polling():
+    """Ensure polling mode is usable even if a webhook was set before."""
+    try:
+        bot.remove_webhook(drop_pending_updates=True)
+        logging.info("Webhook o'chirildi, polling rejimi tayyor.")
+    except Exception as exc:
+        logging.warning("Webhookni o'chirishda xato: %s", exc)
+
+
 # ===== RUN =====
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
+    prepare_polling()
     while True:
         try:
             bot.infinity_polling(skip_pending=True, timeout=30, long_polling_timeout=30)
         except Exception as exc:
             logging.exception("Polling xatoligi: %s", exc)
+            # Webhook qayta o'rnatilib qolgan bo'lsa, pollingdan oldin yana tozalaymiz.
+            prepare_polling()
             time.sleep(5)
