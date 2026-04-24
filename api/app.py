@@ -31,11 +31,11 @@ MENU_PATH = BASE_DIR / "menu.json"
 WEBAPP_DIR = BASE_DIR / "webapp"
 IMAGES_DIR = WEBAPP_DIR / "images"
 
-TOKEN = os.getenv("BOT_TOKEN", "8500279228:AAEJSwSkU72fOM53ntPHMoVoSMudIQv-7ZE")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "7825940174"))
-AUTH_SECRET = os.getenv("AUTH_SECRET", "grato-secret-2026")
+TOKEN = os.getenv("BOT_TOKEN", "")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+AUTH_SECRET = os.getenv("AUTH_SECRET", "dev-auth-secret")
 
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(TOKEN) if TOKEN else None
 active_tokens: dict[str, dict] = {}
 
 
@@ -177,6 +177,8 @@ def build_order_message(order_id: int, phone: str, address: str, items: list[dic
 
 
 def notify_all_admins(text: str):
+    if not bot:
+        return
     for admin in list_admins():
         try:
             bot.send_message(int(admin["telegram_id"]), text)
