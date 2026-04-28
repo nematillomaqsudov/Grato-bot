@@ -31,6 +31,10 @@ def main_menu():
     for cat in MENU:
         markup.add(cat)
 
+    # 🔥 MINI APP TUGMA
+    webApp = types.WebAppInfo("https://gratofood.github.io/miniapp/")
+    markup.add(types.KeyboardButton("🛍 Buyurtma berish (Mini App)", web_app=webApp))
+
     markup.add("🛒 Savat", "✅ Buyurtma berish")
     return markup
 
@@ -69,9 +73,24 @@ def start(msg):
 
 
 # ===== HANDLER =====
-@bot.message_handler(content_types=["text", "contact"])
+@bot.message_handler(content_types=["text", "contact", "web_app_data"])
 def handler(msg):
     chat_id = msg.chat.id
+
+    # 🔥 MINI APP DAN DATA KELSA
+    if msg.content_type == "web_app_data":
+        item = msg.web_app_data.data
+
+        add_item(chat_id, item)
+        cart = get_cart(chat_id)
+
+        bot.send_message(
+            chat_id,
+            f"{item} qo'shildi ✅\n\n{build_cart_text(cart)}",
+            reply_markup=cart_markup(cart)
+        )
+        return
+
     text = msg.text if msg.text else ""
 
     # ===== TELEFON → ZAKAZ =====
