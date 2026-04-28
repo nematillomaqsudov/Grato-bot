@@ -5,7 +5,7 @@ import json
 
 from db import add_item, get_cart, clear_cart, remove_item
 
-TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = os.getenv("TOKEN")
 
 if not TOKEN:
     raise Exception("TOKEN topilmadi")
