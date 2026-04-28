@@ -20,7 +20,6 @@ def load_menu():
     with open("menu.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 MENU = load_menu()
 
 
@@ -31,7 +30,6 @@ def main_menu():
     for cat in MENU:
         markup.add(cat)
 
-    # 🔥 MINI APP TUGMA
     webApp = types.WebAppInfo("https://gratofood.github.io/miniapp/")
     markup.add(types.KeyboardButton("🛍 Buyurtma berish (Mini App)", web_app=webApp))
 
@@ -77,23 +75,33 @@ def start(msg):
 def handler(msg):
     chat_id = msg.chat.id
 
-    # 🔥 MINI APP DAN DATA KELSA
+    # 🔥 MINI APP (TO‘G‘RILANGAN)
     if msg.content_type == "web_app_data":
-        item = msg.web_app_data.data
+        try:
+            data = json.loads(msg.web_app_data.data)
+        except:
+            bot.send_message(chat_id, "Xatolik: noto‘g‘ri data ❌")
+            return
 
-        add_item(chat_id, item)
+        # list bo‘lsa
+        if isinstance(data, list):
+            for item in data:
+                add_item(chat_id, item)
+        else:
+            add_item(chat_id, data)
+
         cart = get_cart(chat_id)
 
         bot.send_message(
             chat_id,
-            f"{item} qo'shildi ✅\n\n{build_cart_text(cart)}",
+            f"Buyurtma qabul qilindi ✅\n\n{build_cart_text(cart)}",
             reply_markup=cart_markup(cart)
         )
         return
 
     text = msg.text if msg.text else ""
 
-    # ===== TELEFON → ZAKAZ =====
+    # ===== TELEFON =====
     if msg.content_type == "contact":
         phone = msg.contact.phone_number
         cart = get_cart(chat_id)
