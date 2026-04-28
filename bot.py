@@ -4,7 +4,7 @@ import os
 import json
 
 TOKEN = "8500279228:AAEJSwSkU72fOM53ntPHMoVoSMudIQv-7ZE"
-ADMIN_ID = "6877877555"
+ADMIN_ID = 6877877555
 
 bot = telebot.TeleBot(TOKEN)
 
