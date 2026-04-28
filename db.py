@@ -25,3 +25,11 @@ def get_cart(user_id):
 def clear_cart(user_id):
     cursor.execute("DELETE FROM carts WHERE user_id=?", (user_id,))
     conn.commit()
+
+
+def remove_item(user_id, item):
+    cursor.execute(
+        "DELETE FROM carts WHERE rowid IN (SELECT rowid FROM carts WHERE user_id=? AND item=? LIMIT 1)",
+        (user_id, item)
+    )
+    conn.commit()
