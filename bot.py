@@ -3,10 +3,7 @@ from telebot import types
 import os
 import json
 
-from db import add_item, get_cart, clear_cart, remove_item
-
 TOKEN = os.getenv("TOKEN")
-
 if not TOKEN:
     raise Exception("TOKEN topilmadi")
 
@@ -15,190 +12,51 @@ ADMIN_ID = 6877877555
 bot = telebot.TeleBot(TOKEN)
 
 
-# ===== MENU =====
-def load_menu():
-    with open("menu.json", "r", encoding="utf-8") as f:
-        return json.load(f)
-
-MENU = load_menu()
-
-
-# ===== MENULAR =====
-def main_menu():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-
-    for cat in MENU:
-        markup.add(cat)
-
-    webApp = types.WebAppInfo("https://gratofood.github.io/miniapp/")
-    markup.add(types.KeyboardButton("🛍 Buyurtma berish (Mini App)", web_app=webApp))
-
-    markup.add("🛒 Savat", "✅ Buyurtma berish")
-    return markup
-
-
-def food_menu(category):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-
-    for food, price in MENU[category].items():
-        markup.add(f"{food} - {price} so'm")
-
-    markup.add("🔙 Orqaga")
-    return markup
-
-
-def cart_markup(cart):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-
-    for item in set(cart):
-        markup.add(f"❌ {item}")
-
-    markup.add("🔙 Orqaga")
-    return markup
-
-
-def build_cart_text(cart):
-    text = "🛒 Savat:\n\n"
-    for item in set(cart):
-        text += f"{item} x{cart.count(item)}\n"
-    return text
-
-
-# ===== START =====
+# ===== START (FAKT LAUNCHER) =====
 @bot.message_handler(commands=["start"])
 def start(msg):
-    bot.send_message(msg.chat.id, "Bo'lim tanlang:", reply_markup=main_menu())
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+    webApp = types.WebAppInfo("https://gratofood.github.io/miniapp/")
+
+    markup.add(types.KeyboardButton("🛍 Buyurtma berish", web_app=webApp))
+
+    bot.send_message(
+        msg.chat.id,
+        "Buyurtma berish uchun tugmani bosing 👇",
+        reply_markup=markup
+    )
 
 
-# ===== HANDLER =====
-@bot.message_handler(content_types=["text", "contact", "web_app_data"])
-def handler(msg):
+# ===== MINIAPP DATA QABUL =====
+@bot.message_handler(content_types=["web_app_data"])
+def webapp(msg):
     chat_id = msg.chat.id
 
-    # 🔥 MINI APP (TO‘G‘RILANGAN)
-    if msg.content_type == "web_app_data":
-        try:
-            data = json.loads(msg.web_app_data.data)
-        except:
-            bot.send_message(chat_id, "Xatolik: noto‘g‘ri data ❌")
-            return
-
-        # list bo‘lsa
-        if isinstance(data, list):
-            for item in data:
-                add_item(chat_id, item)
-        else:
-            add_item(chat_id, data)
-
-        cart = get_cart(chat_id)
-
-        bot.send_message(
-            chat_id,
-            f"Buyurtma qabul qilindi ✅\n\n{build_cart_text(cart)}",
-            reply_markup=cart_markup(cart)
-        )
+    try:
+        data = json.loads(msg.web_app_data.data)
+    except:
+        bot.send_message(chat_id, "Xatolik ❌")
         return
 
-    text = msg.text if msg.text else ""
-
-    # ===== TELEFON =====
-    if msg.content_type == "contact":
-        phone = msg.contact.phone_number
-        cart = get_cart(chat_id)
-
-        if not cart:
-            bot.send_message(chat_id, "Savat bo'sh")
-            return
-
-        total = 0
-        text_order = "🛒 Yangi zakaz:\n\n"
-
-        for item in set(cart):
-            count = cart.count(item)
-            price = 0
-
-            for cat in MENU:
-                if item in MENU[cat]:
-                    price = MENU[cat][item]
-
-            total += price * count
-            text_order += f"{item} x{count} = {price * count} so'm\n"
-
-        text_order += f"\n📞 {phone}\n💰 Jami: {total} so'm"
-
-        bot.send_message(ADMIN_ID, text_order)
-
-        clear_cart(chat_id)
-        bot.send_message(chat_id, "✅ Zakazingiz qabul qilindi!", reply_markup=main_menu())
+    if not data:
+        bot.send_message(chat_id, "Savat bo'sh ❌")
         return
 
-    # ===== ORQAGA =====
-    if text == "🔙 Orqaga":
-        bot.send_message(chat_id, "Menu:", reply_markup=main_menu())
-        return
+    # TEXT YIG'ISH
+    text = "🛒 Yangi zakaz:\n\n"
 
-    # ===== SAVAT =====
-    if text == "🛒 Savat":
-        cart = get_cart(chat_id)
+    counts = {}
+    for item in data:
+        counts[item] = counts.get(item, 0) + 1
 
-        if not cart:
-            bot.send_message(chat_id, "Savat bo'sh")
-            return
+    for item in counts:
+        text += f"{item} x{counts[item]}\n"
 
-        bot.send_message(chat_id, build_cart_text(cart), reply_markup=cart_markup(cart))
-        return
+    # ADMINGA YUBORISH
+    bot.send_message(ADMIN_ID, text)
 
-    # ===== BUYURTMA =====
-    if text == "✅ Buyurtma berish":
-        cart = get_cart(chat_id)
-
-        if not cart:
-            bot.send_message(chat_id, "Savat bo'sh")
-            return
-
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-        markup.add(types.KeyboardButton("📞 Raqam yuborish", request_contact=True))
-
-        bot.send_message(chat_id, "Telefon raqamingizni yuboring:", reply_markup=markup)
-        return
-
-    # ===== O‘CHIRISH =====
-    if text.startswith("❌ "):
-        item = text.replace("❌ ", "")
-        remove_item(chat_id, item)
-
-        cart = get_cart(chat_id)
-
-        if not cart:
-            bot.send_message(chat_id, "Savat bo'sh", reply_markup=main_menu())
-            return
-
-        bot.send_message(
-            chat_id,
-            f"{item} o‘chirildi ❌\n\n{build_cart_text(cart)}",
-            reply_markup=cart_markup(cart)
-        )
-        return
-
-    # ===== KATEGORIYA =====
-    if text in MENU:
-        bot.send_message(chat_id, text, reply_markup=food_menu(text))
-        return
-
-    # ===== MAHSULOT =====
-    for cat in MENU:
-        for food in MENU[cat]:
-            if text.startswith(food):
-                add_item(chat_id, food)
-
-                cart = get_cart(chat_id)
-
-                bot.send_message(
-                    chat_id,
-                    f"{food} qo'shildi ✅\n\n{build_cart_text(cart)}",
-                    reply_markup=cart_markup(cart)
-                )
-                return
+    bot.send_message(chat_id, "✅ Buyurtmangiz yuborildi!")
 
 
 print("🚀 Bot ishga tushdi...")
