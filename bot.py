@@ -13,10 +13,9 @@ bot = telebot.TeleBot(TOKEN)
 def start(msg):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
-    web_app = types.WebAppInfo("https://gratofood.github.io/miniapp/?v=10")
+    web_app = types.WebAppInfo("https://gratofood.github.io/miniapp/?v=20")
 
-    btn = types.KeyboardButton("🛍 Buyurtma berish", web_app=web_app)
-    markup.add(btn)
+    markup.add(types.KeyboardButton("🛍 Buyurtma berish", web_app=web_app))
 
     bot.send_message(msg.chat.id, "Buyurtma berish 👇", reply_markup=markup)
 
@@ -31,38 +30,34 @@ def webapp(msg):
         bot.send_message(chat_id, "Xatolik ❌")
         return
 
-    if not data or "items" not in data:
-        bot.send_message(chat_id, "Savat bo'sh ❌")
-        return
-
-    name = data.get("name", "Noma'lum")
-    phone = data.get("phone", "Yo‘q")
-    address = data.get("address", "")
     items = data.get("items", [])
+    name = data.get("name")
+    phone = data.get("phone")
+    address = data.get("address")
     location = data.get("location", {})
 
-    lat = location.get("lat", "yo‘q")
-    lon = location.get("lon", "yo‘q")
+    lat = location.get("lat")
+    lon = location.get("lon")
+
+    if not items:
+        return bot.send_message(chat_id, "Savat bo'sh ❌")
 
     counts = {}
-    for item in items:
-        counts[item] = counts.get(item, 0) + 1
+    for i in items:
+        counts[i] = counts.get(i, 0) + 1
 
-    text = "🛒 Yangi zakaz:\n\n"
-    text += f"👤 Ism: {name}\n"
-    text += f"📞 Telefon: {phone}\n"
-    text += f"📍 Lokatsiya: {lat}, {lon}\n"
-    text += f"🏠 Izoh: {address}\n\n"
+    text = "🛒 Zakaz:\n\n"
+    text += f"👤 {name}\n"
+    text += f"📞 +998{phone}\n"
+    text += f"📍 {lat},{lon}\n"
+    text += f"🏠 {address}\n\n"
 
-    # Google Maps link
-    if lat != "yo‘q":
-        text += f"🗺 https://maps.google.com/?q={lat},{lon}\n\n"
+    text += f"🗺 https://maps.google.com/?q={lat},{lon}\n\n"
 
     for item, qty in counts.items():
         text += f"{item} x{qty}\n"
 
     bot.send_message(ADMIN_ID, text)
-    bot.send_message(chat_id, "✅ Buyurtma yuborildi!")
-
+    bot.send_message(chat_id, "✅ Yuborildi")
 
 bot.infinity_polling()
