@@ -4,11 +4,10 @@ import os
 import json
 
 TOKEN = os.getenv("TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "6877877555"))
 
 if not TOKEN:
     raise Exception("TOKEN topilmadi")
-
-ADMIN_ID = 6877877555
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -17,9 +16,14 @@ bot = telebot.TeleBot(TOKEN)
 def start(msg):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
-    webApp = types.WebAppInfo("https://gratofood.github.io/miniapp/")
+    web_app = types.WebAppInfo("https://gratofood.github.io/miniapp/")
 
-    markup.add(types.KeyboardButton("🛍 Buyurtma berish", web_app=webApp))
+    btn = types.KeyboardButton(
+        text="🛍 Buyurtma berish",
+        web_app=web_app
+    )
+
+    markup.add(btn)
 
     bot.send_message(
         msg.chat.id,
@@ -32,13 +36,17 @@ def start(msg):
 def webapp(msg):
     chat_id = msg.chat.id
 
+    raw_data = msg.web_app_data.data
+    print("RAW DATA:", raw_data)  # DEBUG
+
     try:
-        data = json.loads(msg.web_app_data.data)
-    except:
-        bot.send_message(chat_id, "Xatolik ❌")
+        data = json.loads(raw_data)
+    except Exception as e:
+        print("JSON ERROR:", e)
+        bot.send_message(chat_id, "Xatolik ❌ (data noto‘g‘ri formatda)")
         return
 
-    if not data:
+    if not isinstance(data, list) or len(data) == 0:
         bot.send_message(chat_id, "Savat bo'sh ❌")
         return
 
@@ -48,8 +56,8 @@ def webapp(msg):
     for item in data:
         counts[item] = counts.get(item, 0) + 1
 
-    for item in counts:
-        text += f"{item} x{counts[item]}\n"
+    for item, qty in counts.items():
+        text += f"{item} x{qty}\n"
 
     bot.send_message(ADMIN_ID, text)
     bot.send_message(chat_id, "✅ Buyurtmangiz yuborildi!")
