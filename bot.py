@@ -13,7 +13,7 @@ bot = telebot.TeleBot(TOKEN)
 def start(msg):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
-    web_app = types.WebAppInfo("https://gratofood.github.io/miniapp/?v=5")
+    web_app = types.WebAppInfo("https://gratofood.github.io/miniapp/?v=10")
 
     btn = types.KeyboardButton("🛍 Buyurtma berish", web_app=web_app)
     markup.add(btn)
@@ -37,8 +37,12 @@ def webapp(msg):
 
     name = data.get("name", "Noma'lum")
     phone = data.get("phone", "Yo‘q")
-    address = data.get("address", "Yo‘q")
+    address = data.get("address", "")
     items = data.get("items", [])
+    location = data.get("location", {})
+
+    lat = location.get("lat", "yo‘q")
+    lon = location.get("lon", "yo‘q")
 
     counts = {}
     for item in items:
@@ -47,7 +51,12 @@ def webapp(msg):
     text = "🛒 Yangi zakaz:\n\n"
     text += f"👤 Ism: {name}\n"
     text += f"📞 Telefon: {phone}\n"
-    text += f"📍 Manzil: {address}\n\n"
+    text += f"📍 Lokatsiya: {lat}, {lon}\n"
+    text += f"🏠 Izoh: {address}\n\n"
+
+    # Google Maps link
+    if lat != "yo‘q":
+        text += f"🗺 https://maps.google.com/?q={lat},{lon}\n\n"
 
     for item, qty in counts.items():
         text += f"{item} x{qty}\n"
