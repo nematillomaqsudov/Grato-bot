@@ -13,7 +13,7 @@ bot = telebot.TeleBot(TOKEN)
 def start(msg):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
-    web_app = types.WebAppInfo("https://gratofood.github.io/miniapp/?v=20")
+    web_app = types.WebAppInfo("https://gratofood.github.io/miniapp/?v=30")
 
     markup.add(types.KeyboardButton("🛍 Buyurtma berish", web_app=web_app))
 
@@ -27,8 +27,7 @@ def webapp(msg):
     try:
         data = json.loads(msg.web_app_data.data)
     except:
-        bot.send_message(chat_id, "Xatolik ❌")
-        return
+        return bot.send_message(chat_id, "Xatolik ❌")
 
     items = data.get("items", [])
     name = data.get("name")
@@ -51,7 +50,6 @@ def webapp(msg):
     text += f"📞 +998{phone}\n"
     text += f"📍 {lat},{lon}\n"
     text += f"🏠 {address}\n\n"
-
     text += f"🗺 https://maps.google.com/?q={lat},{lon}\n\n"
 
     for item, qty in counts.items():
